@@ -11,11 +11,16 @@ SYSTEM = (
 
 def analisar(anuncios):
     """Recebe a lista do painel (id, titulo, preco, visitas_30d, vendas_30d,
-    conversao, saude...) e devolve {anuncio_id: analise}."""
+    conversao, saude...) e devolve {anuncio_id: analise}.
+    Processa em lotes para a resposta JSON do Claude nunca estourar o limite de tokens."""
     ativos = [a for a in anuncios if a["status"] == "active"]
-    if not ativos:
-        return {}
+    out = {}
+    for i in range(0, len(ativos), 15):
+        out.update(_analisar_lote(ativos[i:i + 15]))
+    return out
 
+
+def _analisar_lote(ativos):
     linhas = []
     for a in ativos:
         linhas.append(

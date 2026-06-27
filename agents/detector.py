@@ -33,6 +33,18 @@ def detectar(anuncios):
     if not problemas:
         return {}
 
+    # Processa em lotes para a resposta JSON do Claude nunca vir cortada.
+    por_id = {}
+    for i in range(0, len(problemas), 15):
+        por_id.update(_consultar_lote(problemas[i:i + 15]))
+    # anexa os motivos detectados pelas regras
+    for p in problemas:
+        if p["id"] in por_id:
+            por_id[p["id"]]["motivos"] = p["motivos"]
+    return por_id
+
+
+def _consultar_lote(problemas):
     linhas = [
         f'- {p["id"]} | "{p["titulo"]}" | R$ {p["preco"]} | '
         f'visitas: {p["visitas_30d"] or 0} | vendas 30d: {p["vendas_30d"] or 0} | '
@@ -54,9 +66,4 @@ Retorne: {{"problemas": [ ... ]}}"""
 
     resultado = cerebro.perguntar_json(SYSTEM, prompt, max_tokens=4000,
                                        model=config.MODELO_DETECTOR)
-    por_id = {p["id"]: p for p in resultado.get("problemas", [])}
-    # anexa os motivos detectados pelas regras
-    for p in problemas:
-        if p["id"] in por_id:
-            por_id[p["id"]]["motivos"] = p["motivos"]
-    return por_id
+    return {p["id"]: p for p in resultado.get("problemas", [])}
