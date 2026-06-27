@@ -131,15 +131,16 @@ class MLClient:
         return out
 
     def visitas_30d(self, item_ids):
-        """Visitas dos últimos 30 dias por anúncio. Retorna {item_id: visitas}."""
-        fim = datetime.now().strftime("%Y-%m-%d")
-        ini = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        """Visitas dos últimos 30 dias por anúncio. Retorna {item_id: visitas}.
+        O ML passou a aceitar só 1 item por consulta de visitas, então é um
+        request por anúncio (endpoint time_window)."""
         out = {}
-        for i in range(0, len(item_ids), 20):
-            lote = ",".join(item_ids[i:i + 20])
-            data = self._get("/items/visits", ids=lote, date_from=ini, date_to=fim)
-            for d in data:
-                out[d["item_id"]] = d.get("total_visits", 0)
+        for iid in item_ids:
+            try:
+                data = self._get(f"/items/{iid}/visits/time_window", last=30, unit="day")
+                out[iid] = data.get("total_visits", 0)
+            except requests.HTTPError:
+                out[iid] = 0
         return out
 
     def vendas_30d(self):
