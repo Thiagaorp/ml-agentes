@@ -1,4 +1,5 @@
 name: ML Atendente
+# Atendente automatico do Mercado Livre rodando 24/7 na nuvem.
 
 # Roda na nuvem do GitHub (grátis em repo público), independente do PC do Thiago.
 on:
