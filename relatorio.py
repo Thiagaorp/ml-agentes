@@ -32,8 +32,13 @@ def gerar(painel, analises, abrir=True):
         ads_html = ""
         if ads.get("vale"):
             rotulo = {"sim": "VALE A PENA", "testar": "TESTAR", "nao": "AGORA NÃO"}
+            sugestao = ""
+            if ads["vale"] != "nao" and ads.get("orcamento_dia"):
+                sugestao = (f'<br>💰 Sugestão: R$ {ads["orcamento_dia"]}/dia'
+                            f' · 🎯 ACOS-alvo {ads.get("acos_alvo", "-")}%')
             ads_html = (f'<div class="ads ads-{ads["vale"]}">📣 Mercado Ads: '
-                        f'<b>{rotulo.get(ads["vale"], ads["vale"].upper())}</b> — {ads.get("motivo", "")}</div>')
+                        f'<b>{rotulo.get(ads["vale"], ads["vale"].upper())}</b> — '
+                        f'{ads.get("motivo", "")}{sugestao}</div>')
         alerta = ""
         if problema:
             alerta = (f'<div class="alerta">⚠️ <b>{problema.get("acao", "").upper()}</b> — '

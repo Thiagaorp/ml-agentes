@@ -23,8 +23,10 @@ def _resumo(painel, analises):
         if prob or analise.get("nota") == "urgente":
             acao = (prob.get("acao") if prob else None) or analise.get("nota") or "revisar"
             urgentes.append(f"• {str(acao).upper()}: {a['titulo'][:55]}")
-        if (analise.get("ads") or {}).get("vale") == "sim":
-            ads_sim.append(f"• {a['titulo'][:55]}")
+        ads = analise.get("ads") or {}
+        if ads.get("vale") == "sim":
+            extra = f" — R$ {ads['orcamento_dia']}/dia (ACOS {ads.get('acos_alvo', '-')}%)" if ads.get("orcamento_dia") else ""
+            ads_sim.append(f"• {a['titulo'][:45]}{extra}")
 
     linhas = [
         f"📊 Relatório Mercado Livre — {date.today().strftime('%d/%m/%Y')}",

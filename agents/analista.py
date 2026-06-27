@@ -14,7 +14,13 @@ SYSTEM = (
     "- Conversão baixa (<0.8%) ou saúde baixa → 'nao' (ajustar o anúncio antes; "
     "anunciar agora é pagar clique que não vira venda).\n"
     "- Casos intermediários ou anúncio novo sem histórico → 'testar' "
-    "(começar com orçamento pequeno e ACOS-alvo conservador e observar)."
+    "(começar com orçamento pequeno e ACOS-alvo conservador e observar).\n"
+    "Quando recomendar 'sim' ou 'testar', sugira também:\n"
+    "- orçamento diário INICIAL conservador, em reais, para coletar dados sem "
+    "arriscar muito: geralmente R$ 10 a R$ 30/dia para produtos comuns, um pouco "
+    "mais para ticket alto (preço acima de ~R$ 300). Em 'testar', use o piso da faixa.\n"
+    "- ACOS-alvo (% da venda gasto em anúncio): deve ficar ABAIXO da margem de lucro "
+    "do produto; na dúvida use 10-15%."
 )
 
 
@@ -51,6 +57,8 @@ Para CADA anúncio, retorne um objeto JSON com:
 - "ads": objeto com a recomendação de Mercado Ads:
     - "vale": "sim" | "testar" | "nao"
     - "motivo": 1 frase curta justificando (ligada às métricas do anúncio)
+    - "orcamento_dia": número em reais do orçamento diário inicial sugerido (0 se vale="nao")
+    - "acos_alvo": número (% da venda) do ACOS-alvo sugerido (0 se vale="nao")
 
 Retorne: {{"analises": [ ... ]}}"""
 
