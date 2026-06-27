@@ -27,6 +27,10 @@ MODELO_CRIADOR = os.getenv("MODELO_CRIADOR", SONNET)
 # atendente responde o cliente direto -> Sonnet (qualidade > custo)
 MODELO_ATENDENTE = os.getenv("MODELO_ATENDENTE", SONNET)
 
+# Telegram (notificação do relatório diário no celular). Vazio = não envia.
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+
 DB_PATH = BASE_DIR / "dados.db"
 TOKEN_PATH = BASE_DIR / "token.json"
 RELATORIOS_DIR = BASE_DIR / "relatorios"

@@ -12,6 +12,7 @@ Comandos:
 """
 import argparse
 import json
+import os
 import sys
 
 # Console/Log do Windows usa cp1252 e quebra nos emojis. Força UTF-8 na saída.
@@ -22,6 +23,7 @@ for _stream in (sys.stdout, sys.stderr):
         pass
 
 import db
+import notificar
 import relatorio as rel
 from agents import analista, atendente, criador, detector, palavras
 from ml_api import MLClient
@@ -84,7 +86,17 @@ def cmd_analisar(ml, _args):
 
 def cmd_relatorio(ml, _args):
     con = db.conectar()
-    rel.gerar(db.painel(con), db.analises_de_hoje(con))
+    painel = db.painel(con)
+    analises = db.analises_de_hoje(con)
+    # Na nuvem (GitHub Actions) não há navegador para abrir; lá o relatório vai pro Telegram.
+    caminho = rel.gerar(painel, analises, abrir=not os.getenv("GITHUB_ACTIONS"))
+    if notificar.enviar(painel, analises, caminho):
+        print("📲 Resumo enviado para o Telegram")
+
+
+def cmd_testar_telegram(ml, _args):
+    notificar.testar()
+    print("✅ Mensagem de teste enviada — confira o Telegram no celular.")
 
 
 def cmd_tudo(ml, args):
@@ -124,6 +136,7 @@ def main():
     sub.add_parser("analisar")
     sub.add_parser("relatorio")
     sub.add_parser("tudo")
+    sub.add_parser("testar-telegram")
     pp = sub.add_parser("palavras")
     pp.add_argument("termo")
     pc = sub.add_parser("criar")
@@ -143,7 +156,8 @@ def main():
 
     {"auth": cmd_auth, "sync": cmd_sync, "analisar": cmd_analisar,
      "relatorio": cmd_relatorio, "tudo": cmd_tudo, "palavras": cmd_palavras,
-     "criar": cmd_criar, "responder": cmd_responder}[args.cmd](ml, args)
+     "criar": cmd_criar, "responder": cmd_responder,
+     "testar-telegram": cmd_testar_telegram}[args.cmd](ml, args)
 
 
 if __name__ == "__main__":

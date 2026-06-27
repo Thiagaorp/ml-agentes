@@ -1,19 +1,18 @@
-name: ML Atendente
-# Atendente automatico do Mercado Livre rodando 24/7 na nuvem.
+name: ML Rotina Diaria
+# Sincroniza, analisa e manda o relatório no Telegram todo dia de manhã.
 
-# Roda na nuvem do GitHub (grátis em repo público), independente do PC do Thiago.
 on:
   schedule:
-    - cron: "*/15 * * * *"   # a cada 15 minutos
-  workflow_dispatch:          # botão "Run workflow" para rodar na hora
+    - cron: "0 11 * * *"   # 11:00 UTC = 08:00 no horário de Brasília
+  workflow_dispatch:
 
-# Mesmo grupo da rotina: nunca rodam ao mesmo tempo (evita corrida no token do ML).
+# Mesmo grupo do atendente: nunca rodam ao mesmo tempo (evita corrida no token do ML).
 concurrency:
   group: ml-agentes-token
   cancel-in-progress: false
 
 jobs:
-  responder:
+  rotina:
     runs-on: ubuntu-latest
     steps:
       - name: Baixar o código
@@ -28,8 +27,6 @@ jobs:
       - name: Instalar dependências
         run: pip install -r requirements.txt
 
-      # O login do ML (token.json) precisa sobreviver entre execuções.
-      # Restauramos o último token salvo; na 1ª vez vem do secret ML_TOKEN_JSON_B64.
       - name: Restaurar token do ML
         uses: actions/cache/restore@v4
         with:
@@ -43,21 +40,19 @@ jobs:
         run: |
           if [ ! -f token.json ]; then
             echo "$ML_TOKEN_JSON_B64" | base64 -d > token.json
-            echo "token.json criado a partir do secret (primeira execução)"
-          else
-            echo "token.json restaurado do cache"
           fi
 
-      - name: Responder perguntas dos compradores
+      - name: Sincronizar, analisar e enviar relatório
         env:
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_REDIRECT_URI: ${{ secrets.ML_REDIRECT_URI }}
           ML_SITE: ${{ secrets.ML_SITE }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python main.py responder --enviar
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python main.py tudo
 
-      # Salva o token (já renovado pelo código quando expira) para a próxima execução.
       - name: Salvar token atualizado
         if: always()
         uses: actions/cache/save@v4
