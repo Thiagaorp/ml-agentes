@@ -1,0 +1,7 @@
+.env
+token.json
+dados.db
+relatorios/
+logs/
+__pycache__/
+*.pyc

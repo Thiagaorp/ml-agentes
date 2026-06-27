@@ -1,0 +1,65 @@
+name: ML Atendente
+
+# Roda na nuvem do GitHub (grátis em repo público), independente do PC do Thiago.
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # a cada 15 minutos
+  workflow_dispatch:          # botão "Run workflow" para rodar na hora
+
+# Evita duas execuções ao mesmo tempo (uma de cada vez).
+concurrency:
+  group: ml-atendente
+  cancel-in-progress: false
+
+jobs:
+  responder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      # O login do ML (token.json) precisa sobreviver entre execuções.
+      # Restauramos o último token salvo; na 1ª vez vem do secret ML_TOKEN_JSON_B64.
+      - name: Restaurar token do ML
+        uses: actions/cache/restore@v4
+        with:
+          path: token.json
+          key: ml-token-${{ github.run_id }}
+          restore-keys: ml-token-
+
+      - name: Semear token na primeira execução
+        env:
+          ML_TOKEN_JSON_B64: ${{ secrets.ML_TOKEN_JSON_B64 }}
+        run: |
+          if [ ! -f token.json ]; then
+            echo "$ML_TOKEN_JSON_B64" | base64 -d > token.json
+            echo "token.json criado a partir do secret (primeira execução)"
+          else
+            echo "token.json restaurado do cache"
+          fi
+
+      - name: Responder perguntas dos compradores
+        env:
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_REDIRECT_URI: ${{ secrets.ML_REDIRECT_URI }}
+          ML_SITE: ${{ secrets.ML_SITE }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python main.py responder --enviar
+
+      # Salva o token (já renovado pelo código quando expira) para a próxima execução.
+      - name: Salvar token atualizado
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: token.json
+          key: ml-token-${{ github.run_id }}
