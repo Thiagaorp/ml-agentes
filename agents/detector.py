@@ -35,8 +35,12 @@ def detectar(anuncios):
 
     # Processa em lotes para a resposta JSON do Claude nunca vir cortada.
     por_id = {}
-    for i in range(0, len(problemas), 15):
-        por_id.update(_consultar_lote(problemas[i:i + 15]))
+    for i in range(0, len(problemas), 10):
+        lote = problemas[i:i + 10]
+        try:
+            por_id.update(_consultar_lote(lote))
+        except Exception as e:
+            print(f"⚠️ Lote do detector pulado ({len(lote)} anúncios): {e}")
     # anexa os motivos detectados pelas regras
     for p in problemas:
         if p["id"] in por_id:
@@ -64,6 +68,6 @@ Para CADA anúncio retorne:
 
 Retorne: {{"problemas": [ ... ]}}"""
 
-    resultado = cerebro.perguntar_json(SYSTEM, prompt, max_tokens=4000,
+    resultado = cerebro.perguntar_json(SYSTEM, prompt, max_tokens=6000,
                                        model=config.MODELO_DETECTOR)
     return {p["id"]: p for p in resultado.get("problemas", [])}

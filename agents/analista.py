@@ -30,8 +30,12 @@ def analisar(anuncios):
     Processa em lotes para a resposta JSON do Claude nunca estourar o limite de tokens."""
     ativos = [a for a in anuncios if a["status"] == "active"]
     out = {}
-    for i in range(0, len(ativos), 15):
-        out.update(_analisar_lote(ativos[i:i + 15]))
+    for i in range(0, len(ativos), 10):
+        lote = ativos[i:i + 10]
+        try:
+            out.update(_analisar_lote(lote))
+        except Exception as e:
+            print(f"⚠️ Lote de análise pulado ({len(lote)} anúncios): {e}")
     return out
 
 
@@ -62,6 +66,6 @@ Para CADA anúncio, retorne um objeto JSON com:
 
 Retorne: {{"analises": [ ... ]}}"""
 
-    resultado = cerebro.perguntar_json(SYSTEM, prompt, max_tokens=4000,
+    resultado = cerebro.perguntar_json(SYSTEM, prompt, max_tokens=8000,
                                        model=config.MODELO_ANALISTA)
     return {a["id"]: a for a in resultado.get("analises", [])}
