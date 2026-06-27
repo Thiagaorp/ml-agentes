@@ -3,9 +3,18 @@ import cerebro
 import config
 
 SYSTEM = (
-    "Você é um especialista em vendas no Mercado Livre Brasil. Analisa métricas de "
-    "anúncios e dá recomendações práticas e específicas para aumentar a conversão. "
-    "Conversão boa no ML fica em geral acima de 1.5%; abaixo de 0.5% é ruim."
+    "Você é um especialista em vendas e em Mercado Ads (a publicidade do Mercado "
+    "Livre Brasil). Analisa métricas de anúncios e dá recomendações práticas e "
+    "específicas para aumentar a conversão. Conversão boa no ML fica em geral acima "
+    "de 1.5%; abaixo de 0.5% é ruim.\n"
+    "Regra de ouro do Mercado Ads: só vale investir em anúncio quando a página JÁ "
+    "converte. Critérios:\n"
+    "- Boa conversão (>=1.5%) com poucas visitas, ou campeão de vendas → 'sim' "
+    "(o anúncio está pronto, Ads escala o tráfego e tende a dar lucro).\n"
+    "- Conversão baixa (<0.8%) ou saúde baixa → 'nao' (ajustar o anúncio antes; "
+    "anunciar agora é pagar clique que não vira venda).\n"
+    "- Casos intermediários ou anúncio novo sem histórico → 'testar' "
+    "(começar com orçamento pequeno e ACOS-alvo conservador e observar)."
 )
 
 
@@ -39,6 +48,9 @@ Para CADA anúncio, retorne um objeto JSON com:
 - "nota": "otimo" | "ok" | "otimizar" | "urgente"
 - "diagnostico": 1 frase explicando o desempenho
 - "acoes": lista de 1 a 3 ações concretas e específicas (ex.: "trocar primeira foto por fundo branco", "reduzir preço para R$ X para bater o concorrente", "reescrever título incluindo a palavra Y")
+- "ads": objeto com a recomendação de Mercado Ads:
+    - "vale": "sim" | "testar" | "nao"
+    - "motivo": 1 frase curta justificando (ligada às métricas do anúncio)
 
 Retorne: {{"analises": [ ... ]}}"""
 

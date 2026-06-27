@@ -15,14 +15,16 @@ def _resumo(painel, analises):
     tot_s = sum(a["vendas_30d"] or 0 for a in ativos)
     conv = round(tot_s / tot_v * 100, 2) if tot_v else 0
 
-    urgentes = []
+    urgentes, ads_sim = [], []
     for a in ativos:
         an = analises.get(a["id"], {})
+        analise = an.get("analista") or {}
         prob = an.get("detector")
-        nota = (an.get("analista") or {}).get("nota")
-        if prob or nota == "urgente":
-            acao = (prob.get("acao") if prob else None) or nota or "revisar"
+        if prob or analise.get("nota") == "urgente":
+            acao = (prob.get("acao") if prob else None) or analise.get("nota") or "revisar"
             urgentes.append(f"• {str(acao).upper()}: {a['titulo'][:55]}")
+        if (analise.get("ads") or {}).get("vale") == "sim":
+            ads_sim.append(f"• {a['titulo'][:55]}")
 
     linhas = [
         f"📊 Relatório Mercado Livre — {date.today().strftime('%d/%m/%Y')}",
@@ -32,6 +34,7 @@ def _resumo(painel, analises):
         f"🛒 {tot_s} vendas (30d)",
         f"📈 {conv}% de conversão geral",
         f"🔴 {len(urgentes)} precisam de ação",
+        f"📣 {len(ads_sim)} valem Mercado Ads",
     ]
     if urgentes:
         linhas += ["", "Prioridades de hoje:"] + urgentes[:10]
@@ -39,6 +42,10 @@ def _resumo(painel, analises):
             linhas.append(f"…e mais {len(urgentes) - 10}.")
     else:
         linhas += ["", "✅ Nenhum anúncio em estado crítico hoje."]
+    if ads_sim:
+        linhas += ["", "📣 Bons para anunciar no Mercado Ads:"] + ads_sim[:8]
+        if len(ads_sim) > 8:
+            linhas.append(f"…e mais {len(ads_sim) - 8}.")
     return "\n".join(linhas)
 
 

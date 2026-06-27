@@ -28,6 +28,12 @@ def gerar(painel, analises, abrir=True):
         nota = analise.get("nota", "-")
         cor = CORES_NOTA.get(nota, "#6b7280")
         acoes = "".join(f"<li>{ac}</li>" for ac in analise.get("acoes", []))
+        ads = analise.get("ads") or {}
+        ads_html = ""
+        if ads.get("vale"):
+            rotulo = {"sim": "VALE A PENA", "testar": "TESTAR", "nao": "AGORA NÃO"}
+            ads_html = (f'<div class="ads ads-{ads["vale"]}">📣 Mercado Ads: '
+                        f'<b>{rotulo.get(ads["vale"], ads["vale"].upper())}</b> — {ads.get("motivo", "")}</div>')
         alerta = ""
         if problema:
             alerta = (f'<div class="alerta">⚠️ <b>{problema.get("acao", "").upper()}</b> — '
@@ -42,7 +48,7 @@ def gerar(painel, analises, abrir=True):
           <td>{a['saude'] if a['saude'] is not None else '-'}</td>
           <td><span class="nota" style="background:{cor}">{nota}</span><br>
               <small>{analise.get('diagnostico', '')}</small>
-              <ul>{acoes}</ul></td>
+              <ul>{acoes}</ul>{ads_html}</td>
         </tr>"""
 
     html = f"""<!DOCTYPE html>
@@ -59,6 +65,10 @@ def gerar(painel, analises, abrir=True):
   th {{ background: #1e293b; color: #fff; }}
   .nota {{ color: #fff; padding: 2px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; }}
   .alerta {{ background: #fef2f2; border-left: 3px solid #dc2626; padding: 6px 10px; margin-top: 6px; font-size: 13px; border-radius: 4px; }}
+  .ads {{ padding: 6px 10px; margin-top: 6px; font-size: 13px; border-radius: 4px; border-left: 3px solid #6b7280; background: #f1f5f9; }}
+  .ads-sim {{ border-color: #16a34a; background: #f0fdf4; }}
+  .ads-testar {{ border-color: #d97706; background: #fffbeb; }}
+  .ads-nao {{ border-color: #6b7280; background: #f8fafc; }}
   ul {{ margin: 6px 0 0 16px; padding: 0; }}
   small {{ color: #64748b; }}
 </style></head><body>
