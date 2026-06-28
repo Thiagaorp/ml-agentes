@@ -227,6 +227,16 @@ class MLClient:
 
     # ---------- Ações ----------
 
+    def upload_foto(self, caminho):
+        """Sobe uma imagem do disco para o CDN do Mercado Livre e retorna o
+        picture_id, que pode ir no payload do anúncio como {"id": picture_id}."""
+        with open(caminho, "rb") as f:
+            resp = requests.post(f"{API}/pictures/items/upload",
+                                 headers=self._headers(), files={"file": f})
+        if resp.status_code >= 400:
+            raise RuntimeError(f"Erro {resp.status_code} ao subir foto {caminho}: {resp.text}")
+        return resp.json()["id"]
+
     def criar_anuncio(self, payload):
         return self._post("/items", payload)
 

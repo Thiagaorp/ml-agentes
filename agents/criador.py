@@ -1,6 +1,7 @@
 """Agente Criador: monta e publica anúncios automaticamente a partir de uma
 descrição simples do produto. Usa o agente de palavras-chave para o título."""
 import json
+import os
 
 import cerebro
 import config
@@ -11,6 +12,23 @@ SYSTEM = (
     "completos e válidos. Preço em número, currency_id BRL, condition new salvo "
     "indicação contrária. Preencha o máximo de atributos da categoria."
 )
+
+
+def _montar_fotos(ml, fotos):
+    """Resolve a lista de fotos em pictures para o payload, na ordem dada.
+    Aceita URL pública (vira {"source": url}) ou caminho de arquivo local
+    (sobe pro CDN do ML e vira {"id": picture_id}). Não passa pela IA."""
+    pictures = []
+    for f in fotos:
+        f = str(f).strip()
+        if f.lower().startswith(("http://", "https://")):
+            pictures.append({"source": f})
+        elif os.path.isfile(f):
+            print(f"  ⬆️  Subindo foto do PC: {os.path.basename(f)}")
+            pictures.append({"id": ml.upload_foto(f)})
+        else:
+            print(f"  ⚠️  Foto ignorada (não é URL nem arquivo existente): {f}")
+    return pictures
 
 
 def criar(ml, produto, publicar=False):
@@ -35,13 +53,20 @@ Retorne JSON com exatamente estas chaves:
 - "category_id"
 - "price", "currency_id", "available_quantity", "condition"
 - "listing_type_id": "gold_special"
-- "pictures": lista de {{"source": url}} (use as fotos fornecidas)
 - "attributes": lista de {{"id", "value_name"}} com os atributos que você conseguir inferir
-- "description_text": descrição vendedora em texto puro (será enviada separadamente)"""
+- "description_text": descrição vendedora em texto puro (será enviada separadamente)
+
+NÃO inclua "pictures" — as fotos são tratadas separadamente."""
 
     payload = cerebro.perguntar_json(SYSTEM, prompt, max_tokens=3000,
                                      model=config.MODELO_CRIADOR)
     descricao = payload.pop("description_text", produto.get("descricao", ""))
+
+    # Fotos entram pelo código (não pela IA), na ordem fornecida.
+    print("\n=== FOTOS ===")
+    payload["pictures"] = _montar_fotos(ml, produto.get("fotos", []))
+    print(f"  {len(payload['pictures'])} foto(s) prontas. "
+          "Lembre: 1ª foto fundo branco, mín. 500x500 (ideal 1200x1200), até 12 fotos.")
 
     print("\n=== PAYLOAD DO ANÚNCIO ===")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
@@ -52,6 +77,10 @@ Retorne JSON com exatamente estas chaves:
     if not publicar:
         print("\n[DRY-RUN] Nada foi publicado. Use --publicar para subir o anúncio.")
         return None
+
+    if not payload["pictures"]:
+        raise RuntimeError("Sem fotos válidas — o Mercado Livre exige pelo menos 1 foto. "
+                           "Corrija o campo 'fotos' (URL pública ou caminho de arquivo) e tente de novo.")
 
     item = ml.criar_anuncio(payload)
     if descricao:
