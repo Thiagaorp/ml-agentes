@@ -25,8 +25,22 @@ def conectar():
             anuncio_id TEXT, data TEXT, agente TEXT, resultado TEXT,
             PRIMARY KEY (anuncio_id, data, agente)
         );
+        CREATE TABLE IF NOT EXISTS posvenda (
+            pedido_id TEXT PRIMARY KEY, data TEXT
+        );
     """)
     return con
+
+
+def posvenda_ja_enviado(con, pedido_id):
+    return con.execute("SELECT 1 FROM posvenda WHERE pedido_id = ?",
+                       (str(pedido_id),)).fetchone() is not None
+
+
+def posvenda_marcar(con, pedido_id):
+    con.execute("INSERT OR REPLACE INTO posvenda VALUES (?, date('now'))",
+                (str(pedido_id),))
+    con.commit()
 
 
 def salvar_anuncio(con, a):

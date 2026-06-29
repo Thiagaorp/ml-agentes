@@ -203,6 +203,33 @@ class MLClient:
         )
         return data[0] if data else None
 
+    # ---------- Pedidos e pós-venda ----------
+
+    def pedidos_recentes(self, dias=7):
+        """Pedidos dos últimos N dias (com comprador, itens, status, pack)."""
+        uid = self.me()["id"]
+        ini = (datetime.now() - timedelta(days=dias)).strftime("%Y-%m-%dT00:00:00.000-03:00")
+        pedidos, offset = [], 0
+        while True:
+            data = self._get(
+                "/orders/search", seller=uid, limit=50, offset=offset,
+                sort="date_desc", **{"order.date_created.from": ini},
+            )
+            pedidos += data.get("results", [])
+            offset += 50
+            if offset >= min(data.get("paging", {}).get("total", 0), 500):
+                break
+        return pedidos
+
+    def enviar_mensagem_pos_venda(self, pack_id, seller_id, buyer_id, texto):
+        """Manda mensagem pós-venda ao comprador (sobre um pedido/pack)."""
+        return self._post(
+            f"/messages/packs/{pack_id}/sellers/{seller_id}?tag=post_sale",
+            {"from": {"user_id": str(seller_id)},
+             "to": {"user_id": str(buyer_id)},
+             "text": texto},
+        )
+
     # ---------- Perguntas e respostas ----------
 
     def perguntas_pendentes(self, limit=50):

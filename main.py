@@ -9,6 +9,8 @@ Comandos:
   python main.py palavras "produto"    -> pesquisa de palavras-chave
   python main.py criar produto.json    -> montar anúncio (dry-run; --publicar p/ subir)
   python main.py responder             -> responder perguntas (dry-run; --enviar p/ valer)
+  python main.py posvenda              -> agradecer/pedir avaliação (dry-run; --enviar)
+  python main.py preco                 -> sugerir preço vs concorrência (dry-run; --aplicar)
 """
 import argparse
 import json
@@ -25,7 +27,7 @@ for _stream in (sys.stdout, sys.stderr):
 import db
 import notificar
 import relatorio as rel
-from agents import analista, atendente, criador, detector, palavras
+from agents import analista, atendente, criador, detector, palavras, posvenda, preco
 from ml_api import MLClient
 
 
@@ -99,6 +101,18 @@ def cmd_testar_telegram(ml, _args):
     print("✅ Mensagem de teste enviada — confira o Telegram no celular.")
 
 
+def cmd_posvenda(ml, args):
+    posvenda.processar(ml, enviar=args.enviar, dias=args.dias)
+
+
+def cmd_preco(ml, args):
+    con = db.conectar()
+    painel = db.painel(con)
+    if not painel:
+        sys.exit("Banco vazio — rode antes: python main.py sync")
+    preco.sugerir(ml, painel, aplicar=args.aplicar, limite=args.limite)
+
+
 def cmd_tudo(ml, args):
     cmd_sync(ml, args)
     cmd_analisar(ml, args)
@@ -148,6 +162,16 @@ def main():
                     help="envia as respostas de verdade (sem isso é só simulação)")
     pr.add_argument("--limite", type=int, default=50,
                     help="máximo de perguntas por rodada (padrão 50)")
+    pv = sub.add_parser("posvenda")
+    pv.add_argument("--enviar", action="store_true",
+                    help="envia as mensagens de verdade (sem isso é só simulação)")
+    pv.add_argument("--dias", type=int, default=None,
+                    help="considerar pedidos dos últimos N dias")
+    px = sub.add_parser("preco")
+    px.add_argument("--aplicar", action="store_true",
+                    help="atualiza os preços de verdade (sem isso é só simulação)")
+    px.add_argument("--limite", type=int, default=None,
+                    help="máximo de anúncios por rodada")
     args = p.parse_args()
 
     ml = MLClient()
@@ -157,7 +181,8 @@ def main():
     {"auth": cmd_auth, "sync": cmd_sync, "analisar": cmd_analisar,
      "relatorio": cmd_relatorio, "tudo": cmd_tudo, "palavras": cmd_palavras,
      "criar": cmd_criar, "responder": cmd_responder,
-     "testar-telegram": cmd_testar_telegram}[args.cmd](ml, args)
+     "testar-telegram": cmd_testar_telegram,
+     "posvenda": cmd_posvenda, "preco": cmd_preco}[args.cmd](ml, args)
 
 
 if __name__ == "__main__":
